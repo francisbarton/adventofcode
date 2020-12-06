@@ -1,6 +1,6 @@
 # Day 1, Puzzle 2
 
-input <- sort(as.numeric(readLines("day1_input")))
+input <- as.numeric(readLines("day1_input"))
 
 
 library(dplyr)
@@ -10,29 +10,24 @@ library(dplyr)
 #' But trying clever functions with mapply wasn't getting me the answer
 #' so this will have to do.
 
-tibble("value1" = input, "value2" = input) %>%
-  tidyr::expand(value1, value2) %>%
+tibble("value1" = input, "value2" = input, "value3" = input) %>%
 
+  # create all combinations of the values
+  tidyr::expand(value1, value2, value3) %>%
 
-  # you don't need this bit, just trying to make it a less huge set of combs.
-  rowwise() %>%
-  mutate(total = sum(c_across(everything()))) %>%
-  ungroup() %>%
-  dplyr::filter(total < 2020) %>%
-  dplyr::select(-total) %>%
+  # good idea here from dbradnum to reduce down the list to
+  # leave only unique combinations
+  # https://github.com/dbradnum/adventOfCode2020/blob/master/code/day1.R
 
+  filter(value1 < value2, value2 < value3) %>%
 
-  tidyr::expand(value1, value2, input) %>%
   rowwise() %>%
   mutate(total = sum(c_across(everything()))) %>%
   ungroup() %>%
   dplyr::filter(total == 2020) %>%
-  dplyr::select(1:3) %>%
-  slice(1) %>%
+  dplyr::select(-total) %>%
   unlist() %>%
-  cat() %>%
-  cumprod() %>%
-  last()
+  prod()
 
 
 
