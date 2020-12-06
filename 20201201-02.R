@@ -5,6 +5,11 @@ input <- sort(as.numeric(readLines("day1_input")))
 
 library(dplyr)
 
+
+#' I'm not very happy about this: it feels like I'm brute-forcing it
+#' But trying clever functions with mapply wasn't getting me the answer
+#' so this will have to do.
+
 tibble("value1" = input, "value2" = input) %>%
   tidyr::expand(value1, value2) %>%
 
