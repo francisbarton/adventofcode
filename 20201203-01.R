@@ -28,6 +28,7 @@ map_trees(3, 1) %>%
   length
 
 # Puzzle 2
+
 x_steps <- c(1, 3, 5, 7, 1)
 y_steps <- c(1, 1, 1, 1, 2)
 
