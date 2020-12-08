@@ -1,0 +1,56 @@
+# Day 7, Puzzle 2
+
+library(dplyr)
+library(stringr)
+library(purrr)
+
+input <- readLines("day7_input")
+# input <- readLines("day7_test_input")
+# input <- readLines("day7_test_input2")
+
+find_contained <- function(x) {
+
+  if (length(x) > 0) {
+
+    n <- as.numeric(str_extract(x, "^[0-9]+"))
+    if (n == 0) n <- 1
+
+    x <- str_extract(x, "[a-z]+\\s{1}[a-z]+$")
+
+    bags <- str_subset(input, paste0("^", x)) %>%
+      str_extract("(?<=contain\\s{1}).*(?=\\.$)") %>%
+      str_split(", ") %>%
+      pluck(1) %>%
+      str_remove_all(" bags?$")
+
+    bags_n <- as.numeric(str_extract(bags, "^[0-9]+")) * n
+    bags_x <- str_extract(bags, "[a-z]+\\s{1}[a-z]+$")
+
+    paste(bags_n, bags_x) %>%
+      `[`(which(!is.na(bags_n)))
+
+  } else NULL
+
+}
+
+map_find_contained <- function(x) {
+
+  out <- x %>%
+    dplyr::last() %>%
+    purrr::map(find_contained) %>%
+    unlist() %>%
+    list(x, .)
+
+  if (length(last(out)) == 0) head(out, -1)
+  else map_find_contained(out)
+
+}
+
+"0 shiny gold" %>%
+  map_find_contained() %>%
+  unlist() %>%
+  str_extract("^[0-9]+") %>%
+  as.numeric() %>%
+  sum()
+
+
