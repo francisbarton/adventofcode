@@ -15,16 +15,16 @@ find_contained <- function(x) {
     n <- as.numeric(str_extract(x, "^[0-9]+"))
     if (n == 0) n <- 1
 
-    x <- str_extract(x, "[a-z]+\\s{1}[a-z]+$")
+    x <- str_extract(x, "[a-z]+[:blank:]+[a-z]+$")
 
     bags <- str_subset(input, paste0("^", x)) %>%
-      str_extract("(?<=contain\\s{1}).*(?=\\.$)") %>%
-      str_split(", ") %>%
+      str_extract("(?<=contain[:blank:]{1}).*(?=\\.$)") %>%
+      str_split(",[:blank:]+") %>%
       pluck(1) %>%
-      str_remove_all(" bags?$")
+      str_remove_all("[:blank:]+bags?$")
 
     bags_n <- as.numeric(str_extract(bags, "^[0-9]+")) * n
-    bags_x <- str_extract(bags, "[a-z]+\\s{1}[a-z]+$")
+    bags_x <- str_extract(bags, "[a-z]+[:blank:]+[a-z]+$")
 
     paste(bags_n, bags_x) %>%
       `[`(which(!is.na(bags_n)))
@@ -36,12 +36,12 @@ find_contained <- function(x) {
 map_find_contained <- function(x) {
 
   out <- x %>%
-    dplyr::last() %>%
-    purrr::map(find_contained) %>%
+    last() %>%
+    map(find_contained) %>%
     unlist() %>%
     list(x, .)
 
-  if (length(last(out)) == 0) head(out, -1)
+  if (length(last(out)) == 0) first(out, -1)
   else map_find_contained(out)
 
 }
