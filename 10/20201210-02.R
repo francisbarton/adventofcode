@@ -1,6 +1,5 @@
 # Day 10, PUzzle 2
 
-library(dplyr)
 library(purrr)
 
 input <- c(16L, 10L, 15L, 5L, 1L, 11L, 7L, 19L, 6L, 12L, 4L) %>% sort()
