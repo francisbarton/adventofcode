@@ -1,0 +1,133 @@
+---
+title: 'Advent of Code day 8'
+date: 2022-12-20
+output: md_document
+subtitle: 
+tags: 
+- advent_of_code
+- rstats
+---
+
+Read in our puzzle input:
+
+
+```{r}
+
+day <- 8
+
+input <- here::here(
+  "2022", "input",
+  paste0("day_", stringr::str_pad(day, 2, "left", "0"))
+  ) |>
+  readLines()
+
+
+test_input <- c(
+  30373,
+  25512,
+  65332,
+  33549,
+  35390
+)
+```
+
+## Part 1
+
+The expedition comes across a peculiar patch of tall trees all planted carefully in a grid. The Elves explain that a previous expedition planted these trees as a reforestation effort. Now, they're curious if this would be a good location for a tree house.
+
+First, determine whether there is enough tree cover here to keep a tree house hidden. To do this, you need to count the number of trees that are visible from outside the grid when looking directly along a row or column.
+
+The Elves have already launched a quadcopter to generate a map with the height of each tree (your puzzle input).
+
+Each tree is represented as a single digit whose value is its height, where 0 is the shortest and 9 is the tallest.
+
+A tree is visible if all of the other trees between it and an edge of the grid are shorter than it. Only consider trees in the same row or column; that is, only look up, down, left, or right from any given tree.
+
+Consider your map; how many trees are visible from outside the grid?
+
+```{r part-1}
+test_mat <- test_input |>
+  as.character() |>
+  strsplit("") |>
+  unlist() |>
+  as.numeric() |>
+  matrix(nrow = length(test_input), byrow = TRUE)
+
+is_visible <- function(mat, x, y) {
+  row <- mat[y,]
+  col <- mat[,x]
+  
+  if (all(row[1:(x-1)] < row[x])) TRUE
+  else if (all(col[1:(y-1)] < col[y])) TRUE
+  else if (all(row[(x+1):length(row)] < row[x])) TRUE
+  else if (all(col[(y+1):length(col)] < col[y])) TRUE
+  else FALSE
+}
+
+real_mat <- input |>
+  as.character() |>
+  strsplit("") |>
+  unlist() |>
+  as.numeric() |>
+  matrix(nrow = length(input), byrow = TRUE)
+
+trees_visible <- tidyr::expand_grid(
+  x = seq(2, ncol(real_mat) - 1),
+  y = seq(2, nrow(real_mat) - 1)
+) |>
+  purrr::pmap_lgl(is_visible, mat = real_mat) |>
+  sum()
+
+outside <- (2 * nrow(real_mat)) + (2 * ncol(real_mat)) - 4
+
+trees_visible + outside
+
+```
+
+## Part 2
+
+Content with the amount of tree cover available, the Elves just need to know the best spot to build their tree house: they would like to be able to see a lot of trees.
+
+To measure the viewing distance from a given tree, look up, down, left, and right from that tree; stop if you reach an edge or at the first tree that is the same height or taller than the tree under consideration. (If a tree is right on the edge, at least one of its viewing distances will be zero.)
+
+The Elves don't care about distant trees taller than those found by the rules above; the proposed tree house has large eaves to keep it dry, so they wouldn't be able to see higher than the tree house anyway.
+
+A tree's **scenic score** is found by multiplying together its viewing distance in each of the four directions.
+
+Consider each tree on your map. What is the highest scenic score possible for any tree?
+
+```{r part-2}
+
+scenic_score <- function(mat, x, y) {
+  row <- mat[y,]
+  col <- mat[,x]
+
+  this_height <- mat[y,x]
+
+  trees_left <- row[(x-1):1]
+  trees_up <- col[(y-1):1]
+  trees_right <- row[(x+1):length(row)]
+  trees_down <- col[(y+1):length(col)]
+
+  get_score <- function(vec) {
+    match(TRUE, vec >= this_height, nomatch = length(vec))
+  }
+
+  list(
+    trees_left,
+    trees_up,
+    trees_right,
+    trees_down
+  ) |>
+  purrr::map_dbl(get_score) |>
+  prod()
+}
+
+tidyr::expand_grid(
+  x = seq(2, ncol(real_mat) - 1),
+  y = seq(2, nrow(real_mat) - 1)
+) |>
+  purrr::pmap_dbl(scenic_score, mat = real_mat) |>
+  max()
+
+```

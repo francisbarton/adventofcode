@@ -1,0 +1,177 @@
+---
+title: 'Advent of Code Day 7'
+date: 2022-12-13
+output: md_document
+subtitle: 
+tags: 
+- advent_of_code
+- rstats
+---
+
+
+## Part 1
+
+Read in our puzzle input:
+
+
+```{r}
+
+day <- 7
+
+input <- here::here(
+  "2022", "input",
+  paste0("day_", stringr::str_pad(day, 2, "left", "0"))
+  ) |>
+  readLines()
+
+
+
+test_input <- c(
+  "$ cd /",
+  "$ ls",
+  "dir a",
+  "14848514 b.txt",
+  "8504156 c.dat",
+  "dir d",
+  "$ cd a",
+  "$ ls",
+  "dir e",
+  "29116 f",
+  "2557 g",
+  "62596 h.lst",
+  "$ cd e",
+  "$ ls",
+  "584 i",
+  "$ cd ..",
+  "$ cd ..",
+  "$ cd d",
+  "$ ls",
+  "4060174 j",
+  "8033020 d.log",
+  "5626152 d.ext",
+  "7214296 k"
+)
+```
+
+Some functions to help parse the input, breaking it up into blocks for each directory and summing the file sizes within each.
+
+```{r functions}
+
+parse_dir <- function(latest_list, vec) {
+
+  data_list <- latest_list[[1]]
+  wd <- latest_list[[2]]
+
+  wd <- change_wd(wd, vec[1])
+
+  listing <- vec[-1]
+
+  if (length(listing)) {
+    file_names <- stringr::str_extract(listing, "(?<=[0-9]\\s)[a-z\\.]+$")
+    file_sizes <- stringr::str_extract(listing, "^[0-9]+") |>
+      as.numeric()
+    assertthat::assert_that(length(file_sizes) == length(file_names), msg = "check 1")
+
+    file_names <- purrr::discard(file_names, ~ is.na(.))
+    file_sizes <- purrr::discard(file_sizes, ~ is.na(.))
+    assertthat::assert_that(length(file_sizes) == length(file_names), msg = "check 2")
+
+    if (length(file_sizes)) {
+      total_file_size <- sum(file_sizes)
+      names(file_sizes) <- file_names
+    } else {
+      total_file_size <- 0
+      file_sizes <- character(0)
+    }
+
+    subdirs <- stringr::str_extract(listing, "(?<=^dir )[:lower:]+$")
+
+    this_list <- list(
+      list(
+        size = total_file_size,
+        files = file_sizes,
+        subdirs = purrr::discard(subdirs, ~ is.na(.))
+        )) |>
+      rlang::set_names(wd)
+    
+    data_list <- purrr::list_merge(data_list, this_list)
+  }
+  list(data_list, wd)
+}
+
+change_wd <- function(wd, str) {
+  new_wd <- stringr::str_extract(str, "(?<=\\$ cd )[:graph:]+")
+
+  if (new_wd == "/") wd <- "root"
+  else if (new_wd == "..") wd  <- stringr::str_extract(wd, ".*(?=/[:alnum:]+$)")
+  else if (stringr::str_detect(new_wd, "[a-z]+")) wd <- paste(wd, new_wd, sep = "/")
+  else stop(stringr::str_glue("change_wd: directory name '{wd}' not correctly parsed."))
+
+  wd
+}
+
+batch_instructions <- function(vec) {
+  vec <- stringr::str_c(vec, collapse = "|")
+  vec <- stringr::str_split_1(vec, "\\|(?=\\$ cd)")
+  vec |>
+    purrr::map(~ stringr::str_split_1(., "\\|"))
+}
+
+```
+
+Try to find the answer for part 1.
+
+```{r part-1}
+
+out <- input |>
+  batch_instructions() |>
+  purrr::reduce(.f = parse_dir, .init = list(data_list = list(), wd = NULL)) |>
+  purrr::pluck(1, 1) |>
+  purrr::map_dfc("size") |>
+  tidyr::pivot_longer(cols = everything())
+
+filter_and_sum <- function(x, dtf) {
+  filtered_sum <- dtf |>
+    dplyr::filter(stringr::str_starts(name, x)) |>
+    dplyr::summarise(across(value, sum))
+  dplyr::bind_cols(name = x, filtered_sum)
+}
+
+res <- out |>
+  dplyr::pull(name) |>
+  purrr::map_df(filter_and_sum, dtf = out) 
+
+res |>
+  dplyr::filter(value <= 100000) |>
+  dplyr::pull(value) |>
+  sum()
+
+```
+
+Success! (At long, long last - I am not going to post the details!)
+
+## Part 2
+
+Now we have correct data with the files rolled up correctly into folders, we should easily be able to solve part 2.
+
+```{r part-2}
+
+current_du <- res |>
+  dplyr::filter(name == "root") |>
+  dplyr::pull(value)
+
+current_df <- 70000000 - current_du
+
+space_needed <- 30000000 - current_df
+
+res |>
+  dplyr::filter(value >= space_needed) |>
+  dplyr::slice_min(order_by = value, n = 1) |>
+  dplyr::pull(value)
+
+
+```
+
+Success again!
+
+This took me till the 20th December, for various reasons.
