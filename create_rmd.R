@@ -1,5 +1,5 @@
 post_title <- readline("Post title: ")
-post_slug <- tolower(gsub(" ", "_", post_title))
+post_slug <- tolower(gsub("[ :]+", "_", post_title))
 year <- format(Sys.Date(), "%Y")
 month <- format(Sys.Date(), "%m")
 file_loc <- here::here(year, paste0(post_slug, ".Rmd"))

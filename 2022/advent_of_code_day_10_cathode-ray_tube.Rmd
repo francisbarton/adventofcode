@@ -1,0 +1,223 @@
+---
+title: 'Advent of Code day 10: Cathode-Ray Tube'
+date: 2022-12-21
+output: md_document
+subtitle: 
+tags: 
+- advent_of_code
+- rstats
+---
+
+--- Day 10: Cathode-Ray Tube ---
+
+You avoid the ropes, plunge into the river, and swim to shore.
+
+The Elves yell something about meeting back up with them upriver, but the river is too loud to tell exactly what they're saying. They finish crossing the bridge and disappear from view.
+
+Situations like this must be why the Elves prioritized getting the communication system on your handheld device working. You pull it out of your pack, but the amount of water slowly draining from a big crack in its screen tells you it probably won't be of much immediate use.
+
+Unless, that is, you can design a replacement for the device's video system! It seems to be some kind of cathode-ray tube screen and simple CPU that are both driven by a precise clock circuit. The clock circuit ticks at a constant rate; each tick is called a cycle.
+
+Start by figuring out the signal being sent by the CPU. The CPU has a single register, `X`, which starts with the value 1. It supports only two instructions:
+
+- `addx V` takes two cycles to complete. After two cycles, the `X` register is increased by the value `V`. (`V` can be negative.)
+- `noop` takes one cycle to complete. It has no other effect.
+
+The CPU uses these instructions in a program (your puzzle input) to, somehow, tell the screen what to draw.
+
+Read in our puzzle input:
+
+
+```{r read-in}
+
+day <- 10
+
+input <- here::here(
+  "2022", "input",
+  paste0("day_", stringr::str_pad(day, 2, "left", "0"))
+  ) |>
+  readLines()
+
+
+test_input <- c(
+"addx 15",
+"addx -11",
+"addx 6",
+"addx -3",
+"addx 5",
+"addx -1",
+"addx -8",
+"addx 13",
+"addx 4",
+"noop",
+"addx -1",
+"addx 5",
+"addx -1",
+"addx 5",
+"addx -1",
+"addx 5",
+"addx -1",
+"addx 5",
+"addx -1",
+"addx -35",
+"addx 1",
+"addx 24",
+"addx -19",
+"addx 1",
+"addx 16",
+"addx -11",
+"noop",
+"noop",
+"addx 21",
+"addx -15",
+"noop",
+"noop",
+"addx -3",
+"addx 9",
+"addx 1",
+"addx -3",
+"addx 8",
+"addx 1",
+"addx 5",
+"noop",
+"noop",
+"noop",
+"noop",
+"noop",
+"addx -36",
+"noop",
+"addx 1",
+"addx 7",
+"noop",
+"noop",
+"noop",
+"addx 2",
+"addx 6",
+"noop",
+"noop",
+"noop",
+"noop",
+"noop",
+"addx 1",
+"noop",
+"noop",
+"addx 7",
+"addx 1",
+"noop",
+"addx -13",
+"addx 13",
+"addx 7",
+"noop",
+"addx 1",
+"addx -33",
+"noop",
+"noop",
+"noop",
+"addx 2",
+"noop",
+"noop",
+"noop",
+"addx 8",
+"noop",
+"addx -1",
+"addx 2",
+"addx 1",
+"noop",
+"addx 17",
+"addx -9",
+"addx 1",
+"addx 1",
+"addx -3",
+"addx 11",
+"noop",
+"noop",
+"addx 1",
+"noop",
+"addx 1",
+"noop",
+"noop",
+"addx -13",
+"addx -19",
+"addx 1",
+"addx 3",
+"addx 26",
+"addx -30",
+"addx 12",
+"addx -1",
+"addx 3",
+"addx 1",
+"noop",
+"noop",
+"noop",
+"addx -9",
+"addx 18",
+"addx 1",
+"addx 2",
+"noop",
+"noop",
+"addx 9",
+"noop",
+"noop",
+"noop",
+"addx -1",
+"addx 2",
+"addx -37",
+"addx 1",
+"addx 3",
+"noop",
+"addx 15",
+"addx -21",
+"addx 22",
+"addx -6",
+"addx 1",
+"noop",
+"addx 2",
+"addx 1",
+"noop",
+"addx -10",
+"noop",
+"noop",
+"addx 20",
+"addx 1",
+"addx 2",
+"addx 2",
+"addx -6",
+"addx -11",
+"noop",
+"noop",
+"noop"
+)
+
+```
+
+```{r part-1-funs}
+
+process_cycle <- function(data_list, instruction) {
+  cycles <- data_list[[1]]
+  x <- data_list[[2]]
+
+  ifelse(instruction == "noop",
+    list(cycles + 1, x),
+    list(cycles + 2, x + as.numeric(sub("addx ", "", instruction))))
+}
+
+res_1 <- {
+  ifelse(test_input[1] == "noop",
+    list(1, 1),
+    list(2, 1 + as.numeric(sub("addx ", "", test_input[1]))))
+}
+
+res_2 <- {
+  ifelse(test_input[2] == "noop",
+    list(res_1[[1]] + 1, res_1[[2]]),
+    list(res_1[[1]] + 2, res_1[[2]] + as.numeric(sub("addx ", "", test_input[2]))))
+}
+
+out <- purrr::accumulate(utils::tail(test_input, -2), process_cycle, .init = res_2) |>
+  purrr::transpose() |>
+  rlang::set_names(c("cycles_completed", "x")) |>
+  purrr::map_df(purrr::flatten_dbl)
+  
+head(out, 10)
+
+```
